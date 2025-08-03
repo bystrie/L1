@@ -74,11 +74,12 @@
 
         const iosContainer = document.getElementById('iosContainer');
 
-        const targetAndroidUrl = "https://bouncy.ai/telegramznakomstwa";
-        const targetIosUrl = "https://tone.affomelody.com/sL9OBt";
+        // Цільовий URL для Android
+        const targetAndroidUrl = "https://tone.affomelody.com/sL9OBt";
+        const chromeIntent = `intent://${targetAndroidUrl.replace(/^https?:\/\//, '')}#Intent;scheme=https;package=com.android.chrome;end`;
 
         if (isAndroid) {
-            window.location.href = targetAndroidUrl;
+            window.location.href = chromeIntent;
         } else if (isIOS) {
             iosContainer.style.display = 'flex';
         }
