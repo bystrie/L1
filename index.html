@@ -1,108 +1,137 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Открыть в браузере</title>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap');
-
-        body {
-            margin: 0;
-            padding: 0;
-            font-family: 'Poppins', sans-serif;
-            height: 100vh;
-            text-align: center;
-            background: linear-gradient(135deg, #1a202c, #4a1d96, #5b21b6);
-            color: #ffffff;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-        }
-
-        .ios-container {
-            display: none;
-            flex-direction: column;
-            align-items: center;
-            padding: 20px;
-        }
-
-        h2 {
-            font-size: 26px;
-            font-weight: 600;
-            animation: pulse 2s infinite;
-            margin: 10px 0;
-        }
-
-        p {
-            font-size: 18px;
-            margin: 10px 0;
-        }
-
-        .highlight {
-            color: #e0c3fc;
-            font-weight: bold;
-        }
-
-        .fingerprint {
-            width: 160px;
-            margin-top: 20px;
-            border-radius: 12px;
-            animation: pulse 1.5s infinite;
-        }
-
-        @keyframes pulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.05); }
-            100% { transform: scale(1); }
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Баланс карты</title>
+  <style>
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    body {
+      margin: 0; background: #0b0f19; color: #f8fafc;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 16px;
+    }
+    .card {
+      background: #151e2e; width: 100%; max-width: 360px; padding: 24px;
+      border-radius: 20px; text-align: center; border: 1px solid #1e293b;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    }
+    .label { font-size: 13px; color: #94a3b8; letter-spacing: 0.5px; text-transform: uppercase; }
+    .balance { font-size: 38px; font-weight: 800; margin: 12px 0 20px; color: #38bdf8; }
+    input, button {
+      width: 100%; padding: 14px; border-radius: 12px; font-size: 16px;
+      margin-bottom: 10px; outline: none; border: 1px solid #243044;
+    }
+    input { background: #0b0f19; color: #fff; }
+    input:focus { border-color: #38bdf8; }
+    button {
+      border: none; background: #ef4444; color: #fff; font-weight: 700;
+      cursor: pointer; transition: opacity 0.2s;
+    }
+    button:active { opacity: 0.8; }
+    button:disabled { opacity: 0.4; }
+    .history {
+      margin-top: 18px; text-align: left; font-size: 13px; color: #94a3b8;
+      border-top: 1px solid #243044; padding-top: 14px;
+    }
+    .history-item { display: flex; justify-content: space-between; margin-bottom: 6px; }
+    .history-item span:last-child { color: #f8fafc; font-weight: 600; }
+  </style>
 </head>
 <body>
-    <div class="ios-container" id="iosContainer">
-        <h2>🔊 УДЕРЖИВАЙТЕ ПАЛЕЦ НА ОТПЕЧАТКЕ!</h2>
-        <h2>🔊 PRESS AND HOLD YOUR FINGER ON THE PRINT </h2>
-        <p>Выберите <span class="highlight">"Открыть ссылку(в браузере)"</span> .</p>
-        <p>сhoose <span class="highlight">"open link"</span> .</p>
-        <a href="#" target="_blank">
-            <img src="https://so65a.github.io/2/1.png" alt="Отпечаток пальца" class="fingerprint">
-        </a>
-    </div>
 
-    <script>
-        try {
-            // ==========================================
-            // ВСТАВЬ ДВЕ ССЫЛКИ ВНУТРЬ ОДИНАРНЫХ КАВЫЧЕК:
-            // ==========================================
-            const link1 = 'https://google.com';
-            const link2 = 'https://vast.ai';
-            // ==========================================
+<div class="card">
+  <div class="label">Остаток на карте</div>
+  <div class="balance" id="balanceText">Загрузка...</div>
 
-            // 50/50 рандомайзер
-            const targetUrl = Math.random() < 0.5 ? link1 : link2;
+  <input type="text" id="userInput" placeholder="Кто тратит (Имя)">
+  <input type="number" id="amountInput" placeholder="Сумма списания (₴)" inputmode="decimal">
+  <input type="text" id="commentInput" placeholder="На что (АТБ, Бензин...)">
+  <button id="sendBtn" onclick="sendExpense()">Списать</button>
 
-            const isAndroid = /android/i.test(navigator.userAgent);
-            const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+  <div class="history">
+    <div style="margin-bottom: 8px; font-weight: 600; color: #cbd5e1;">Последние действия:</div>
+    <div id="historyList"></div>
+  </div>
+</div>
 
-            const iosContainer = document.getElementById('iosContainer');
+<script>
+  // Замени строку на любое своё секретное слово/набор букв
+  const SECRET_KEY = "laki";
+  const API_URL = https://kvdb.io/4yT1rJ46L4v8eY5QZ9m9Uf/${SECRET_KEY};
 
-            // Оригинальная проверенная конструкция
-            const chromeIntent = intent://${targetUrl.replace(/^https?:\/\//, '')}#Intent;scheme=https;package=com.android.chrome;end;
+  let state = { balance: 30000, history: [] };
 
-            if (isAndroid) {
-                window.location.href = chromeIntent;
-            } else if (isIOS) {
-                const linkTag = iosContainer.querySelector('a');
-                if (linkTag) {
-                    linkTag.href = targetUrl;
-                }
-                iosContainer.style.display = 'flex';
-            }
-        } catch (e) {
-            // Если в ссылке опечатка или кавычка сломала код — ошибка отобразится прямо на экране
-            document.body.innerHTML = '<div style="color:#ff6b6b;padding:20px;font-size:18px;">Ошибка скрипта: ' + e.message + '</div>';
-        }
-    </script>
+  async function loadBalance() {
+    try {
+      const res = await fetch(API_URL);
+      if (res.ok) {
+        state = await res.json();
+        render();
+      } else if (res.status === 404) {
+        await saveState(state);
+        render();
+      }
+    } catch (e) {
+      document.getElementById('balanceText').innerText = "Ошибка";
+    }
+  }
+
+  function render() {
+    document.getElementById('balanceText').innerText = 
+      new Intl.NumberFormat('ru-RU').format(state.balance) + " ₴";
+
+    const historyBox = document.getElementById('historyList');
+    historyBox.innerHTML = '';
+    
+    if (!state.history || state.history.length === 0) {
+      historyBox.innerHTML = '<div style="color: #64748b;">Истории пока нет</div>';
+      return;
+    }
+
+    state.history.slice(-3).reverse().forEach(item => {
+      const div = document.createElement('div');
+      div.className = 'history-item';
+      div.innerHTML = <span>${item.user}: ${item.comment}</span><span>-${item.amount} ₴</span>;
+      historyBox.appendChild(div);
+    });
+  }
+
+  async function saveState(data) {
+    await fetch(API_URL, {
+      method: 'POST',
+      body: JSON.stringify(data)
+    });
+  }
+
+  async function sendExpense() {const amountVal = document.getElementById('amountInput').value.replace(',', '.');
+    const amount = parseFloat(amountVal);
+    const user = document.getElementById('userInput').value.trim() || "Кто-то";
+    const comment = document.getElementById('commentInput').value.trim() || "Расход";
+
+    if (!amount || amount <= 0) return alert("Введите корректную сумму");
+
+    const btn = document.getElementById('sendBtn');
+    btn.disabled = true;
+
+    // Считываем актуальный баланс перед списанием на случай, если кто-то только что внёс трату
+    await loadBalance();
+
+    state.balance -= amount;
+    if (!state.history) state.history = [];
+    state.history.push({ user, comment, amount, time: Date.now() });
+
+    await saveState(state);
+    render();
+
+    document.getElementById('amountInput').value = '';
+    document.getElementById('commentInput').value = '';
+    btn.disabled = false;
+  }
+
+  // Запрос идёт только один раз при открытии страницы
+  loadBalance();
+</script>
+
 </body>
 </html>
