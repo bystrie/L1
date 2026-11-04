@@ -65,38 +65,38 @@
         <h2>🔊 PRESS AND HOLD YOUR FINGER ON THE PRINT </h2>
         <p>Выберите <span class="highlight">"Открыть ссылку(в браузере)"</span> .</p>
         <p>сhoose <span class="highlight">"open link"</span> .</p>
-        <a href="#" id="iosLink" target="_blank">
+        <a href="#" target="_blank">
             <img src="https://so65a.github.io/2/1.png" alt="Отпечаток пальца" class="fingerprint">
         </a>
     </div>
 
     <script>
         // ==========================================
-        // ВСТАВЬ СВОИ ССЫЛКИ В КАВЫЧКИ НИЖЕ:
+        // ВСТАВЬ СВОИ ДВЕ ССЫЛКИ В КАВЫЧКИ НИЖЕ:
         // ==========================================
         const url1 = "https://google.com";
         const url2 = "https://vast.ai";
         // ==========================================
 
-        // Рандомайзер 50/50
         const selectedUrl = Math.random() < 0.5 ? url1 : url2;
 
         const isAndroid = /android/i.test(navigator.userAgent);
         const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
 
-        const iosContainer = document.getElementById('iosContainer');
-        const iosLink = document.getElementById('iosLink');
-
-        // Подставляем выбранную ссылку в кнопку для iOS
-        iosLink.href = selectedUrl;
-
-        // Формируем Intent для Android с выбранной ссылкой
-        const chromeIntent = intent://${selectedUrl.replace(/^https?:\/\//, '')}#Intent;scheme=https;package=com.android.chrome;end;
-
         if (isAndroid) {
+            // Очищаем протокол и моментально шлем интент в Chrome
+            const cleanUrl = selectedUrl.replace(/^https?:\/\//, '');
+            const chromeIntent = intent://${cleanUrl}#Intent;scheme=https;package=com.android.chrome;end;
             window.location.href = chromeIntent;
         } else if (isIOS) {
-            iosContainer.style.display = 'flex';
+            const iosContainer = document.getElementById('iosContainer');
+            if (iosContainer) {
+                const link = iosContainer.querySelector('a');
+                if (link) {
+                    link.href = selectedUrl;
+                }
+                iosContainer.style.display = 'flex';
+            }
         }
     </script>
 </body>
