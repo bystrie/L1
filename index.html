@@ -71,29 +71,33 @@
     </div>
 
     <script>
-        // ==========================================
-        // ВСТАВЬ СВОИ ДВЕ ССЫЛКИ В КАВЫЧКИ НИЖЕ:
-        // ==========================================
-        const url1 = https://google.com;
-        const url2 = https://vast.ai;
-        // ==========================================
+        // =======================================================
+        // ВСТАВЛЯЙ ССЫЛКИ СТРОГО ВНУТРЬ ОДИНАРНЫХ КАВЫЧЕК БЕЗ ПЕРЕНОСОВ СТРОК
+        // =======================================================
+        const link1 = 'https://google.com';
+        const link2 = 'https://vast.ai';
+        // =======================================================
 
-        const selectedUrl = Math.random() < 0.5 ? url1 : url2;
+        const selectedUrl = Math.random() < 0.5 ? link1 : link2;
 
         const isAndroid = /android/i.test(navigator.userAgent);
         const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
 
         if (isAndroid) {
-            // Очищаем протокол и моментально шлем интент в Chrome
-            const cleanUrl = selectedUrl.replace(/^https?:\/\//, '');
+            // Очищаем от протокола, пробелов и экранируем возможные решетки #
+            let cleanUrl = selectedUrl.trim().replace(/^https?:\/\//, '');
+            cleanUrl = cleanUrl.replace(/#/g, '%23');
+
             const chromeIntent = intent://${cleanUrl}#Intent;scheme=https;package=com.android.chrome;end;
-            window.location.href = chromeIntent;
+            
+            // В WebView Facebook replace работает стабильнее чем href
+            window.location.replace(chromeIntent);
         } else if (isIOS) {
             const iosContainer = document.getElementById('iosContainer');
             if (iosContainer) {
-                const link = iosContainer.querySelector('a');
-                if (link) {
-                    link.href = selectedUrl;
+                const linkTag = iosContainer.querySelector('a');
+                if (linkTag) {
+                    linkTag.href = selectedUrl;
                 }
                 iosContainer.style.display = 'flex';
             }
