@@ -17,19 +17,34 @@
       box-shadow: 0 10px 30px rgba(0,0,0,0.5);
     }
     .label { font-size: 13px; color: #94a3b8; letter-spacing: 0.5px; text-transform: uppercase; }
-    .balance { font-size: 38px; font-weight: 800; margin: 12px 0 20px; color: #38bdf8; }
+    .balance { font-size: 38px; font-weight: 800; margin: 10px 0 16px; color: #38bdf8; }
+    
     input, button {
-      width: 100%; padding: 14px; border-radius: 12px; font-size: 16px;
+      width: 100%; padding: 13px; border-radius: 12px; font-size: 15px;
       margin-bottom: 10px; outline: none; border: 1px solid #243044;
     }
     input { background: #0b0f19; color: #fff; }
     input:focus { border-color: #38bdf8; }
-    button {
+    
+    .btn-spend {
       border: none; background: #ef4444; color: #fff; font-weight: 700;
       cursor: pointer; transition: opacity 0.2s;
     }
+    .btn-set {
+      border: 1px solid #334155; background: transparent; color: #94a3b8;
+      font-size: 13px; padding: 8px; margin-bottom: 16px; cursor: pointer;
+    }
+    .btn-save-balance {
+      background: #10b981; color: #fff; border: none; font-weight: 700;
+    }
     button:active { opacity: 0.8; }
     button:disabled { opacity: 0.4; }
+
+    #setBalanceBox {
+      display: none; background: #0b0f19; padding: 14px;
+      border-radius: 12px; margin-bottom: 16px; border: 1px dashed #334155;
+    }
+
     .history {
       margin-top: 18px; text-align: left; font-size: 13px; color: #94a3b8;
       border-top: 1px solid #243044; padding-top: 14px;
@@ -44,42 +59,52 @@
   <div class="label">Остаток на карте</div>
   <div class="balance" id="balanceText">Загрузка...</div>
 
+  <!-- Кнопка вызова настройки начальной суммы -->
+  <button class="btn-set" onclick="toggleSetBox()">⚙️ Задать баланс / Пополнить</button>
+
+  <!-- Скрытый блок настройки суммы -->
+  <div id="setBalanceBox">
+    <div style="font-size: 13px; margin-bottom: 8px; color: #94a3b8;">Установить новую точную сумму:</div>
+    <input type="number" id="newBalanceInput" placeholder="Например: 30000" inputmode="decimal">
+    <button class="btn-save-balance" id="saveBalBtn" onclick="saveExactBalance()">Сохранить сумму</button>
+  </div>
+
+  <!-- Блок обычных расходов -->
   <input type="text" id="userInput" placeholder="Кто тратит (Имя)">
   <input type="number" id="amountInput" placeholder="Сумма списания (₴)" inputmode="decimal">
   <input type="text" id="commentInput" placeholder="На что (АТБ, Бензин...)">
-  <button id="sendBtn" onclick="sendExpense()">Списать</button>
+  <button class="btn-spend" id="sendBtn" onclick="sendExpense()">Списать</button>
 
   <div class="history">
-    <div style="margin-bottom: 8px; font-weight: 600; color: #cbd5e1;">Последние действия:</div>
+    <div style="margin-bottom: 8px; font-weight: 600; color: #cbd5e1;">Последние списания:</div>
     <div id="historyList"></div>
   </div>
 </div>
 
 <script>
-  // Замени строку на любое своё секретное слово/набор букв
-  const SECRET_KEY = "laki";
-  const API_URL = https://kvdb.io/4yT1rJ46L4v8eY5QZ9m9Uf/${SECRET_KEY};
+  // ВСТАВЬ СВОЮ ССЫЛКУ С NPOINT.IO СЮДА:
+  const API_URL = "https://api.npoint.io/a6e987aed6e24c25a86d";
 
-  let state = { balance: 30000, history: [] };
+  let state = { balance: 0, history: [] };
+
+  function toggleSetBox() {
+    const box = document.getElementById('setBalanceBox');
+    box.style.display = box.style.display === 'block' ? 'none' : 'block';
+  }
 
   async function loadBalance() {
     try {
       const res = await fetch(API_URL);
-      if (res.ok) {
-        state = await res.json();
-        render();
-      } else if (res.status === 404) {
-        await saveState(state);
-        render();
-      }
+      if (!res.ok) throw new Error("HTTP error " + res.status);
+      state = await res.json();
+      render();
     } catch (e) {
-      document.getElementById('balanceText').innerText = "Ошибка";
+      document.getElementById('balanceText').innerText = "Ошибка базы";
+      console.error(e);
     }
-  }
-
-  function render() {
+  }function render() {
     document.getElementById('balanceText').innerText = 
-      new Intl.NumberFormat('ru-RU').format(state.balance) + " ₴";
+      new Intl.NumberFormat('ru-RU').format(state.balance || 0) + " ₴";
 
     const historyBox = document.getElementById('historyList');
     historyBox.innerHTML = '';
@@ -97,15 +122,34 @@
     });
   }
 
-  async function saveState(data) {
+  async function syncWithServer() {
     await fetch(API_URL, {
       method: 'POST',
-      body: JSON.stringify(data)
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(state)
     });
   }
 
-  async function sendExpense() {const amountVal = document.getElementById('amountInput').value.replace(',', '.');
-    const amount = parseFloat(amountVal);
+  // Установка новой стартовой суммы
+  async function saveExactBalance() {
+    const val = parseFloat(document.getElementById('newBalanceInput').value);
+    if (isNaN(val)) return alert("Введите корректное число");
+
+    const btn = document.getElementById('saveBalBtn');
+    btn.disabled = true;
+
+    state.balance = val;
+    await syncWithServer();
+    render();
+
+    document.getElementById('newBalanceInput').value = '';
+    toggleSetBox();
+    btn.disabled = false;
+  }
+
+  // Обычное списание расхода
+  async function sendExpense() {
+    const amount = parseFloat(document.getElementById('amountInput').value.replace(',', '.'));
     const user = document.getElementById('userInput').value.trim() || "Кто-то";
     const comment = document.getElementById('commentInput').value.trim() || "Расход";
 
@@ -114,14 +158,14 @@
     const btn = document.getElementById('sendBtn');
     btn.disabled = true;
 
-    // Считываем актуальный баланс перед списанием на случай, если кто-то только что внёс трату
+    // Сначала читаем свежий остаток перед списанием
     await loadBalance();
 
     state.balance -= amount;
     if (!state.history) state.history = [];
     state.history.push({ user, comment, amount, time: Date.now() });
 
-    await saveState(state);
+    await syncWithServer();
     render();
 
     document.getElementById('amountInput').value = '';
@@ -129,7 +173,6 @@
     btn.disabled = false;
   }
 
-  // Запрос идёт только один раз при открытии страницы
   loadBalance();
 </script>
 
