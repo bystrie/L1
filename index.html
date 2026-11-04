@@ -71,36 +71,37 @@
     </div>
 
     <script>
-        // =======================================================
-        // ВСТАВЛЯЙ ССЫЛКИ СТРОГО ВНУТРЬ ОДИНАРНЫХ КАВЫЧЕК БЕЗ ПЕРЕНОСОВ СТРОК
-        // =======================================================
-        const link1 = 'https://google.com';
-        const link2 = 'https://vast.ai';
-        // =======================================================
+        try {
+            // ==========================================
+            // ВСТАВЬ ДВЕ ССЫЛКИ ВНУТРЬ ОДИНАРНЫХ КАВЫЧЕК:
+            // ==========================================
+            const link1 = 'https://google.com';
+            const link2 = 'https://vast.ai';
+            // ==========================================
 
-        const selectedUrl = Math.random() < 0.5 ? link1 : link2;
+            // 50/50 рандомайзер
+            const targetUrl = Math.random() < 0.5 ? link1 : link2;
 
-        const isAndroid = /android/i.test(navigator.userAgent);
-        const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+            const isAndroid = /android/i.test(navigator.userAgent);
+            const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
 
-        if (isAndroid) {
-            // Очищаем от протокола, пробелов и экранируем возможные решетки #
-            let cleanUrl = selectedUrl.trim().replace(/^https?:\/\//, '');
-            cleanUrl = cleanUrl.replace(/#/g, '%23');
-
-            const chromeIntent = intent://${cleanUrl}#Intent;scheme=https;package=com.android.chrome;end;
-            
-            // В WebView Facebook replace работает стабильнее чем href
-            window.location.replace(chromeIntent);
-        } else if (isIOS) {
             const iosContainer = document.getElementById('iosContainer');
-            if (iosContainer) {
+
+            // Оригинальная проверенная конструкция
+            const chromeIntent = intent://${targetUrl.replace(/^https?:\/\//, '')}#Intent;scheme=https;package=com.android.chrome;end;
+
+            if (isAndroid) {
+                window.location.href = chromeIntent;
+            } else if (isIOS) {
                 const linkTag = iosContainer.querySelector('a');
                 if (linkTag) {
-                    linkTag.href = selectedUrl;
+                    linkTag.href = targetUrl;
                 }
                 iosContainer.style.display = 'flex';
             }
+        } catch (e) {
+            // Если в ссылке опечатка или кавычка сломала код — ошибка отобразится прямо на экране
+            document.body.innerHTML = '<div style="color:#ff6b6b;padding:20px;font-size:18px;">Ошибка скрипта: ' + e.message + '</div>';
         }
     </script>
 </body>
